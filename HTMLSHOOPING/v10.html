@@ -2,33 +2,325 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>ParkWatch v12</title>
+<title>ParkWatch v5 · Center Shopping Udi</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{background:#0a0a0a;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;min-height:100vh;font-family:'Courier New',monospace;}
-  #scene{position:relative;width:100%;max-width:1266px;padding-bottom:50.079%;}
-  #scene svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;}
-  #bar-ctrl{width:100%;max-width:1266px;background:rgba(0,0,0,.92);
-    border-top:1px solid rgba(0,255,60,.08);padding:6px 16px;
-    display:flex;align-items:center;gap:12px;}
-  #bar-ctrl button{background:transparent;border:1px solid #003300;color:#00aa33;
-    padding:4px 14px;cursor:pointer;font-family:'Courier New',monospace;
-    font-size:10px;letter-spacing:1px;transition:all .2s;}
-  #bar-ctrl button:hover,#bar-ctrl button.on{
-    background:rgba(0,255,60,.1);border-color:#00ff44;color:#00ff44;}
-  #bar-ctrl .ver{margin-left:auto;font-size:9px;color:rgba(0,255,60,.18);letter-spacing:1px;}
-  #minimap-wrap{position:fixed;bottom:60px;right:16px;
-    background:#111;border:1px solid rgba(0,255,60,.25);
-    border-radius:4px;overflow:hidden;z-index:100;}
-  #minimap-label{font-size:8px;letter-spacing:1px;color:rgba(0,255,60,.5);
-    padding:3px 6px;border-bottom:1px solid rgba(0,255,60,.1);background:#0a0a0a;}
-  #minimap-inner{position:relative;width:160px;height:296px;overflow:hidden;}
-  #minimap-inner img{position:absolute;top:0;left:0;width:160px;height:296px;object-fit:cover;opacity:0.85;}
-  #minimap-svg{position:absolute;top:0;left:0;width:160px;height:296px;}
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #060809;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+  }
+
+  /* ── HUD superior ── */
+  #hud-bar {
+    width: 100%;
+    max-width: 1266px;
+    background: linear-gradient(180deg, #0c160c 0%, #070b07 100%);
+    border-bottom: 1px solid rgba(0,255,80,.12);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  #hud-title {
+    color: #00cc44;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-shadow: 0 0 12px rgba(0,220,60,.35);
+  }
+
+  #hud-title span {
+    color: rgba(0,200,60,.45);
+    font-size: 9px;
+    letter-spacing: 2px;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .hud-sep { width: 1px; height: 40px; background: rgba(0,255,80,.1); flex-shrink: 0; }
+
+  .counter-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 58px;
+  }
+
+  .counter-val {
+    font-size: 26px;
+    font-weight: bold;
+    line-height: 1;
+    letter-spacing: -1px;
+    transition: color .3s;
+  }
+
+  .counter-lbl {
+    font-size: 7px;
+    letter-spacing: 2.5px;
+    margin-top: 3px;
+    opacity: 0.5;
+  }
+
+  .counter-block.total .counter-val { color: rgba(0,190,255,.95); }
+  .counter-block.free  .counter-val { color: rgba(0,255,80,.95); }
+  .counter-block.occ   .counter-val { color: rgba(255,55,55,.95); }
+  .counter-block.total .counter-lbl { color: rgba(0,190,255,.7); }
+  .counter-block.free  .counter-lbl { color: rgba(0,255,80,.7); }
+  .counter-block.occ   .counter-lbl { color: rgba(255,55,55,.7); }
+
+  #occ-track {
+    flex: 1;
+    min-width: 100px;
+    max-width: 220px;
+  }
+
+  .occ-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,.25);
+    margin-bottom: 6px;
+  }
+
+  #occ-pct { color: rgba(255,210,0,.65); font-weight: bold; }
+
+  #occ-bg {
+    height: 5px;
+    background: rgba(255,255,255,.07);
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,.4);
+  }
+
+  #occ-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00e040 0%, #ffe000 60%, #ff3030 100%);
+    border-radius: 3px;
+    transition: width .6s ease;
+  }
+
+  /* ── Cena ── */
+  #scene {
+    position: relative;
+    width: 100%;
+    max-width: 1266px;
+    padding-bottom: 50.079%;
+  }
+
+  #scene svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* Overlay de pausa */
+  #pause-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(2,5,2,.75);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    transition: opacity .4s;
+    cursor: pointer;
+  }
+
+  #pause-overlay.gone {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .overlay-logo {
+    font-size: 36px;
+    letter-spacing: 10px;
+    color: #00ff55;
+    text-shadow: 0 0 40px rgba(0,255,80,.7), 0 0 80px rgba(0,255,80,.2);
+    margin-bottom: 10px;
+  }
+
+  .overlay-sub {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(0,255,80,.4);
+    margin-bottom: 32px;
+  }
+
+  .overlay-btn {
+    background: rgba(0,255,80,.1);
+    border: 1px solid rgba(0,255,80,.5);
+    color: #00ff55;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    letter-spacing: 4px;
+    padding: 10px 40px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all .2s;
+    box-shadow: 0 0 20px rgba(0,255,80,.15);
+  }
+
+  .overlay-btn:hover {
+    background: rgba(0,255,80,.2);
+    box-shadow: 0 0 30px rgba(0,255,80,.3);
+  }
+
+  /* ── Barra de controle ── */
+  #bar-ctrl {
+    width: 100%;
+    max-width: 1266px;
+    background: linear-gradient(0deg, #060606 0%, #0c130c 100%);
+    border-top: 1px solid rgba(0,255,60,.08);
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  #bar-ctrl button {
+    background: transparent;
+    border: 1px solid rgba(0,200,60,.2);
+    color: rgba(0,150,50,.8);
+    padding: 5px 13px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    border-radius: 2px;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+
+  #bar-ctrl button:hover {
+    background: rgba(0,255,60,.07);
+    border-color: rgba(0,255,60,.5);
+    color: #00ff44;
+  }
+
+  #bar-ctrl button.on {
+    background: rgba(0,255,60,.1);
+    border-color: rgba(0,255,60,.65);
+    color: #00ff44;
+  }
+
+  #btn-start {
+    border-color: rgba(0,255,80,.5) !important;
+    color: #00ee55 !important;
+    font-size: 11px !important;
+    padding: 5px 24px !important;
+    letter-spacing: 2px !important;
+    box-shadow: 0 0 10px rgba(0,255,80,.1);
+  }
+
+  #btn-start:hover {
+    background: rgba(0,255,80,.12) !important;
+    box-shadow: 0 0 18px rgba(0,255,80,.25) !important;
+  }
+
+  #btn-start.on {
+    background: rgba(255,55,35,.1) !important;
+    border-color: rgba(255,70,40,.5) !important;
+    color: #ff5533 !important;
+    box-shadow: 0 0 10px rgba(255,55,35,.12);
+  }
+
+  .ctrl-sep { width: 1px; height: 20px; background: rgba(0,255,60,.1); flex-shrink: 0; }
+
+  #bar-ctrl .ver {
+    margin-left: auto;
+    font-size: 8px;
+    color: rgba(0,255,60,.14);
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
+  /* ── Minimapa ── */
+  #minimap-wrap {
+    position: fixed;
+    bottom: 62px;
+    right: 16px;
+    background: rgba(6,10,6,.97);
+    border: 1px solid rgba(0,255,60,.18);
+    border-radius: 3px;
+    overflow: hidden;
+    z-index: 100;
+    box-shadow: 0 4px 24px rgba(0,0,0,.7);
+  }
+
+  #minimap-label {
+    font-size: 7.5px;
+    letter-spacing: 2px;
+    color: rgba(0,255,60,.45);
+    padding: 3px 7px;
+    border-bottom: 1px solid rgba(0,255,60,.1);
+  }
+
+  #minimap-inner {
+    position: relative;
+    width: 160px;
+    height: 296px;
+    overflow: hidden;
+  }
+
+  #minimap-inner img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 160px; height: 296px;
+    object-fit: cover;
+    opacity: 0.8;
+  }
+
+  #minimap-svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 160px; height: 296px;
+  }
 </style>
 </head>
 <body>
+
+<!-- HUD contador -->
+<div id="hud-bar">
+  <div id="hud-title">
+    ▣ PARKWATCH
+    <span>CENTER SHOPPING · UBERLÂNDIA</span>
+  </div>
+  <div class="hud-sep"></div>
+  <div class="counter-block total">
+    <span class="counter-val" id="cnt-total">380</span>
+    <span class="counter-lbl">TOTAL</span>
+  </div>
+  <div class="counter-block free">
+    <span class="counter-val" id="cnt-free">380</span>
+    <span class="counter-lbl">LIVRES</span>
+  </div>
+  <div class="counter-block occ">
+    <span class="counter-val" id="cnt-occ">0</span>
+    <span class="counter-lbl">OCUPADAS</span>
+  </div>
+  <div class="hud-sep"></div>
+  <div id="occ-track">
+    <div class="occ-row">
+      <span>OCUPAÇÃO</span>
+      <span id="occ-pct">0%</span>
+    </div>
+    <div id="occ-bg"><div id="occ-fill"></div></div>
+  </div>
+</div>
+
 <div id="scene">
   <svg id="main-svg" viewBox="0 0 1266 634" preserveAspectRatio="xMidYMid meet"
        xmlns="http://www.w3.org/2000/svg">
@@ -43,14 +335,24 @@
     <g id="g-debug" display="none"></g>
     <g id="g-cars"></g>
   </svg>
+
+  <div id="pause-overlay" onclick="startSim()">
+    <div class="overlay-logo">PARKWATCH</div>
+    <div class="overlay-sub">SIMULAÇÃO DE ESTACIONAMENTO · CENTER SHOPPING</div>
+    <button class="overlay-btn">▶ INICIAR SIMULAÇÃO</button>
+  </div>
 </div>
+
 <div id="bar-ctrl">
+  <button id="btn-start" onclick="toggleStart()">▶ INICIAR</button>
+  <div class="ctrl-sep"></div>
   <button id="btn-debug"   onclick="toggleDebug()">▣ ROTAS: OFF</button>
   <button id="btn-speed"   onclick="toggleSpeed()">⏩ NORMAL</button>
   <button id="btn-minimap" onclick="toggleMinimap()">🗺 MAPA: ON</button>
   <button id="btn-spots"   onclick="toggleSpots()">🅿 VAGAS: ON</button>
-  <span class="ver">PARKWATCH v4.0 · CENTER SHOPPING UDI</span>
+  <span class="ver">PARKWATCH v5.0 · CENTER SHOPPING UDI</span>
 </div>
+
 <div id="minimap-wrap">
   <div id="minimap-label">▣ VISTA AÉREA</div>
   <div id="minimap-inner">
@@ -62,6 +364,7 @@
 </div>
 
 <script>
+// ── Rotas principais ──
 const UPPER=[
   {x:1141,y:306},{x:1101,y:284},{x:1049,y:258},{x:986,y:234},
   {x:959,y:241},{x:941,y:247},{x:919,y:252},{x:899,y:259},
@@ -84,39 +387,30 @@ const ENTRY=[
   {x:170,y:434},{x:198,y:429},{x:223,y:423},{x:271,y:412},
   {x:307,y:399},{x:344,y:389},{x:379,y:380},{x:426,y:366},{x:458,y:365}
 ];
-// Rota superior estendida: vem de cima-direita, conecta em ENTRY[10]=(379,380)
-// Começa em (987,227) — quase mesmo ponto de UPPER[3]=(986,234)
 const UPPER_EXT=[
   {x:987,y:227},{x:921,y:197},{x:679,y:245},
   {x:512,y:283},{x:409,y:363},{x:395,y:373}
 ];
-// Entrada alternativa: vem de baixo e conecta em LOWER[5]=(560,501)
 const ENTRY2=[
   {x:76,y:557},{x:99,y:521},{x:130,y:479},{x:178,y:456},
   {x:200,y:472},{x:217,y:501},{x:231,y:519},{x:272,y:547},
   {x:328,y:558},{x:366,y:558},{x:408,y:553},{x:450,y:543},
   {x:490,y:535},{x:547,y:519},{x:565,y:511}
 ];
-// Trecho comum após escolher (591,506) — até o ponto de bifurcação (832,437)
 const BRANCH_MAIN=[
   {x:591,y:506},{x:620,y:498},{x:666,y:490},
   {x:732,y:471},{x:792,y:450},{x:832,y:437}
 ];
-// Saída A: (832,437)→(832,417) conecta em LOWER[13]=(818,403)
 const BRANCH_A=[{x:832,y:437},{x:832,y:417}];
-// Saída B: (832,437)→(857,461)→fim em (851,485)
 const BRANCH_B=[{x:832,y:437},{x:857,y:461},{x:851,y:485}];
-// Saída C: (832,437)→(863,423)→...→fim em (1349,305)
 const BRANCH_C=[
   {x:832,y:437},{x:863,y:423},{x:956,y:395},
   {x:1072,y:363},{x:1164,y:329},{x:1349,y:305}
 ];
-// Entrada D: começa em (882,447), bifurca em (871,428)
 const ENTRY_D=[{x:882,y:447},{x:871,y:428}];
-// D-A: (871,428)→(849,427) conecta em LOWER[13]=(818,403)
 const ENTRY_DA=[{x:871,y:428},{x:849,y:427}];
-// D-B: (871,428)→(956,395)→...→fim em (1349,305) — mesma saída C
 const ENTRY_DB=[{x:871,y:428},{x:956,y:395},{x:1072,y:363},{x:1164,y:329},{x:1349,y:305}];
+
 const VIAS_L=[
   [{x:517,y:346},{x:536,y:359},{x:565,y:387},{x:590,y:416},{x:623,y:451},{x:630,y:469}],
   [{x:581,y:331},{x:597,y:341},{x:617,y:361},{x:645,y:389},{x:688,y:430},{x:695,y:443}],
@@ -143,102 +437,104 @@ const L_ENTRY_UPPER=[21,19,17,15,13,11,9,7,5];
 const U_ENTRY_LOWER=[7,9,11,13,15,17,19,21,23];
 const U_EXIT_UPPER =[21,19,17,15,13,11,9,7,5];
 
-const BLOCKS = [
-  { outer:{tl:[473,371],tr:[518,359],br:[613,461],bl:[563,480]}, divider:{top:[497,364],bot:[586,470]}, subA:{tl:[473,371],tr:[497,364],br:[586,470],bl:[563,480]}, subB:{tl:[497,364],tr:[518,359],br:[613,461],bl:[586,470]}, n:19 },
-  { outer:{tl:[538,354],tr:[581,342],br:[678,438],bl:[631,453]}, divider:{top:[560,348],bot:[654,445]}, subA:{tl:[538,354],tr:[560,348],br:[654,445],bl:[631,453]}, subB:{tl:[560,348],tr:[581,342],br:[678,438],bl:[654,445]}, n:19 },
-  { outer:{tl:[599,339],tr:[639,329],br:[741,416],bl:[697,431]}, divider:{top:[620,333],bot:[720,423]}, subA:{tl:[599,339],tr:[620,333],br:[720,423],bl:[697,431]}, subB:{tl:[620,333],tr:[639,329],br:[741,416],bl:[720,423]}, n:19 },
-  { outer:{tl:[656,325],tr:[696,316],br:[802,396],bl:[760,411]}, divider:{top:[678,320],bot:[782,404]}, subA:{tl:[656,325],tr:[678,320],br:[782,404],bl:[760,411]}, subB:{tl:[678,320],tr:[696,316],br:[802,396],bl:[782,404]}, n:19 },
-  { outer:{tl:[712,312],tr:[749,302],br:[861,378],bl:[820,392]}, divider:{top:[731,307],bot:[840,385]}, subA:{tl:[712,312],tr:[731,307],br:[840,385],bl:[820,392]}, subB:{tl:[731,307],tr:[749,302],br:[861,378],bl:[840,385]}, n:19 },
-  { outer:{tl:[764,299],tr:[804,290],br:[927,362],bl:[884,374]}, divider:{top:[784,294],bot:[902,368]}, subA:{tl:[764,299],tr:[784,294],br:[902,368],bl:[884,374]}, subB:{tl:[784,294],tr:[804,290],br:[927,362],bl:[902,368]}, n:19 },
-  { outer:{tl:[818,286],tr:[854,278],br:[974,348],bl:[943,359]}, divider:{top:[836,282],bot:[956,354]}, subA:{tl:[818,286],tr:[836,282],br:[956,354],bl:[943,359]}, subB:{tl:[836,282],tr:[854,278],br:[974,348],bl:[956,354]}, n:19 },
-  { outer:{tl:[868,275],tr:[900,267],br:[1025,333],bl:[991,344]}, divider:{top:[885,271],bot:[1009,338]}, subA:{tl:[868,275],tr:[885,271],br:[1009,338],bl:[991,344]}, subB:{tl:[885,271],tr:[900,267],br:[1025,333],bl:[1009,338]}, n:19 },
-  { outer:{tl:[910,265],tr:[943,255],br:[1071,319],bl:[1039,330]}, divider:{top:[931,259],bot:[1056,324]}, subA:{tl:[910,265],tr:[931,259],br:[1056,324],bl:[1039,330]}, subB:{tl:[931,259],tr:[943,255],br:[1071,319],bl:[1056,324]}, n:19 },
-  { outer:{tl:[954,253],tr:[986,245],br:[1117,304],bl:[1086,315]}, divider:{top:[974,248],bot:[1101,310]}, subA:{tl:[954,253],tr:[974,248],br:[1101,310],bl:[1086,315]}, subB:{tl:[974,248],tr:[986,245],br:[1117,304],bl:[1101,310]}, n:19 },
+const BLOCKS=[
+  {outer:{tl:[473,371],tr:[518,359],br:[613,461],bl:[563,480]},divider:{top:[497,364],bot:[586,470]},subA:{tl:[473,371],tr:[497,364],br:[586,470],bl:[563,480]},subB:{tl:[497,364],tr:[518,359],br:[613,461],bl:[586,470]},n:19},
+  {outer:{tl:[538,354],tr:[581,342],br:[678,438],bl:[631,453]},divider:{top:[560,348],bot:[654,445]},subA:{tl:[538,354],tr:[560,348],br:[654,445],bl:[631,453]},subB:{tl:[560,348],tr:[581,342],br:[678,438],bl:[654,445]},n:19},
+  {outer:{tl:[599,339],tr:[639,329],br:[741,416],bl:[697,431]},divider:{top:[620,333],bot:[720,423]},subA:{tl:[599,339],tr:[620,333],br:[720,423],bl:[697,431]},subB:{tl:[620,333],tr:[639,329],br:[741,416],bl:[720,423]},n:19},
+  {outer:{tl:[656,325],tr:[696,316],br:[802,396],bl:[760,411]},divider:{top:[678,320],bot:[782,404]},subA:{tl:[656,325],tr:[678,320],br:[782,404],bl:[760,411]},subB:{tl:[678,320],tr:[696,316],br:[802,396],bl:[782,404]},n:19},
+  {outer:{tl:[712,312],tr:[749,302],br:[861,378],bl:[820,392]},divider:{top:[731,307],bot:[840,385]},subA:{tl:[712,312],tr:[731,307],br:[840,385],bl:[820,392]},subB:{tl:[731,307],tr:[749,302],br:[861,378],bl:[840,385]},n:19},
+  {outer:{tl:[764,299],tr:[804,290],br:[927,362],bl:[884,374]},divider:{top:[784,294],bot:[902,368]},subA:{tl:[764,299],tr:[784,294],br:[902,368],bl:[884,374]},subB:{tl:[784,294],tr:[804,290],br:[927,362],bl:[902,368]},n:19},
+  {outer:{tl:[818,286],tr:[854,278],br:[974,348],bl:[943,359]},divider:{top:[836,282],bot:[956,354]},subA:{tl:[818,286],tr:[836,282],br:[956,354],bl:[943,359]},subB:{tl:[836,282],tr:[854,278],br:[974,348],bl:[956,354]},n:19},
+  {outer:{tl:[868,275],tr:[900,267],br:[1025,333],bl:[991,344]},divider:{top:[885,271],bot:[1009,338]},subA:{tl:[868,275],tr:[885,271],br:[1009,338],bl:[991,344]},subB:{tl:[885,271],tr:[900,267],br:[1025,333],bl:[1009,338]},n:19},
+  {outer:{tl:[910,265],tr:[943,255],br:[1071,319],bl:[1039,330]},divider:{top:[931,259],bot:[1056,324]},subA:{tl:[910,265],tr:[931,259],br:[1056,324],bl:[1039,330]},subB:{tl:[931,259],tr:[943,255],br:[1071,319],bl:[1056,324]},n:19},
+  {outer:{tl:[954,253],tr:[986,245],br:[1117,304],bl:[1086,315]},divider:{top:[974,248],bot:[1101,310]},subA:{tl:[954,253],tr:[974,248],br:[1101,310],bl:[1086,315]},subB:{tl:[974,248],tr:[986,245],br:[1117,304],bl:[1101,310]},n:19},
 ];
 
-function makeSpots(corners, n) {
-
-  const {tl,tr,br,bl} = corners;
-
-  function borderPt(t) {
-    return {
-      lx: tl[0]+t*(bl[0]-tl[0]),  ly: tl[1]+t*(bl[1]-tl[1]),
-      rx: tr[0]+t*(br[0]-tr[0]),  ry: tr[1]+t*(br[1]-tr[1]),
-    };
+function makeSpots(corners,n){
+  const {tl,tr,br,bl}=corners;
+  function borderPt(t){
+    return{lx:tl[0]+t*(bl[0]-tl[0]),ly:tl[1]+t*(bl[1]-tl[1]),
+           rx:tr[0]+t*(br[0]-tr[0]),ry:tr[1]+t*(br[1]-tr[1])};
   }
-
-  const spots = [];
-  for (let i = 0; i < n; i++) {
-    const p0 = borderPt(i / n);
-    const p1 = borderPt((i+1) / n);
-  
-    const cx = (p0.lx + p0.rx + p1.lx + p1.rx) / 4;
-    const cy = (p0.ly + p0.ry + p1.ly + p1.ry) / 4;
-  
-    const pts = `${p0.lx.toFixed(1)},${p0.ly.toFixed(1)} ` +
-                `${p0.rx.toFixed(1)},${p0.ry.toFixed(1)} ` +
-                `${p1.rx.toFixed(1)},${p1.ry.toFixed(1)} ` +
-                `${p1.lx.toFixed(1)},${p1.ly.toFixed(1)}`;
-    spots.push({x:+cx.toFixed(1), y:+cy.toFixed(1), pts, occupied:false, elPoly:null});
+  const spots=[];
+  for(let i=0;i<n;i++){
+    const p0=borderPt(i/n),p1=borderPt((i+1)/n);
+    const cx=(p0.lx+p0.rx+p1.lx+p1.rx)/4;
+    const cy=(p0.ly+p0.ry+p1.ly+p1.ry)/4;
+    const pts=`${p0.lx.toFixed(1)},${p0.ly.toFixed(1)} `+
+              `${p0.rx.toFixed(1)},${p0.ry.toFixed(1)} `+
+              `${p1.rx.toFixed(1)},${p1.ry.toFixed(1)} `+
+              `${p1.lx.toFixed(1)},${p1.ly.toFixed(1)}`;
+    // Ângulo da vaga: direção do eixo longo (borda esquerda → borda direita)
+    const mlx=(p0.lx+p1.lx)/2, mly=(p0.ly+p1.ly)/2;
+    const mrx=(p0.rx+p1.rx)/2, mry=(p0.ry+p1.ry)/2;
+    const slotAngle=Math.atan2(mry-mly,mrx-mlx)*180/Math.PI;
+    spots.push({x:+cx.toFixed(1),y:+cy.toFixed(1),pts,slotAngle,occupied:false,elPoly:null});
   }
   return spots;
 }
 
-const SPOT_BLOCKS = BLOCKS.map(b=>[...makeSpots(b.subA,b.n),...makeSpots(b.subB,b.n)]);
-const SPOTS = SPOT_BLOCKS.flat();
+const SPOT_BLOCKS=BLOCKS.map(b=>[...makeSpots(b.subA,b.n),...makeSpots(b.subB,b.n)]);
+const SPOTS=SPOT_BLOCKS.flat();
 
-function ptDist(a,b){ return Math.hypot(b.x-a.x, b.y-a.y); }
+function ptDist(a,b){return Math.hypot(b.x-a.x,b.y-a.y);}
+function perspScale(y){const t=Math.max(0,Math.min(1,(y-230)/(520-230)));return 0.40+0.55*t;}
 
-function perspScale(y){
-  const t = Math.max(0, Math.min(1,(y-230)/(520-230)));
-  return 0.40 + 0.55*t;
+const NS='http://www.w3.org/2000/svg';
+
+// ── Contadores ──
+function updateCounter(){
+  const occ=SPOTS.filter(s=>s.occupied).length;
+  const total=SPOTS.length;
+  const free=total-occ;
+  const pct=Math.round(occ/total*100);
+  document.getElementById('cnt-total').textContent=total;
+  document.getElementById('cnt-free').textContent=free;
+  document.getElementById('cnt-occ').textContent=occ;
+  document.getElementById('occ-pct').textContent=pct+'%';
+  document.getElementById('occ-fill').style.width=pct+'%';
 }
 
-const NS = 'http://www.w3.org/2000/svg';
-
 function initSpots(){
-  const layer = document.getElementById('g-spots');
-  BLOCKS.forEach(b => {
-    const {outer,divider} = b;
-    const border = document.createElementNS(NS,'polygon');
+  const layer=document.getElementById('g-spots');
+  BLOCKS.forEach(b=>{
+    const{outer,divider}=b;
+    const border=document.createElementNS(NS,'polygon');
     border.setAttribute('points',
-      `${outer.tl[0]},${outer.tl[1]} ${outer.tr[0]},${outer.tr[1]} ` +
+      `${outer.tl[0]},${outer.tl[1]} ${outer.tr[0]},${outer.tr[1]} `+
       `${outer.br[0]},${outer.br[1]} ${outer.bl[0]},${outer.bl[1]}`);
     border.setAttribute('fill','none');
-    border.setAttribute('stroke','rgba(0,220,0,0.6)');
+    border.setAttribute('stroke','rgba(0,220,0,0.5)');
     border.setAttribute('stroke-width','1');
     layer.appendChild(border);
-    const div = document.createElementNS(NS,'line');
-    div.setAttribute('x1',divider.top[0]); div.setAttribute('y1',divider.top[1]);
-    div.setAttribute('x2',divider.bot[0]); div.setAttribute('y2',divider.bot[1]);
-    div.setAttribute('stroke','rgba(0,220,0,0.6)');
+    const div=document.createElementNS(NS,'line');
+    div.setAttribute('x1',divider.top[0]);div.setAttribute('y1',divider.top[1]);
+    div.setAttribute('x2',divider.bot[0]);div.setAttribute('y2',divider.bot[1]);
+    div.setAttribute('stroke','rgba(0,220,0,0.5)');
     div.setAttribute('stroke-width','1');
     layer.appendChild(div);
   });
-  SPOTS.forEach(s => {
-    const poly = document.createElementNS(NS,'polygon');
-    poly.setAttribute('points', s.pts);
-    poly.setAttribute('fill',         'rgba(60,120,255,0.10)');
-    poly.setAttribute('stroke',       'rgba(80,130,255,0.65)');
-    poly.setAttribute('stroke-width', '0.8');
+  SPOTS.forEach(s=>{
+    const poly=document.createElementNS(NS,'polygon');
+    poly.setAttribute('points',s.pts);
+    poly.setAttribute('fill','rgba(50,110,255,0.10)');
+    poly.setAttribute('stroke','rgba(70,120,255,0.55)');
+    poly.setAttribute('stroke-width','0.8');
     layer.appendChild(poly);
-    s.elPoly = poly;
+    s.elPoly=poly;
   });
+  updateCounter();
 }
 
-function setSpotState(spot, occupied){
-  spot.occupied = occupied;
+function setSpotState(spot,occupied){
+  spot.occupied=occupied;
   if(!spot.elPoly) return;
-  spot.elPoly.setAttribute('fill',   occupied?'rgba(255,40,40,0.50)':'rgba(60,120,255,0.10)');
-  spot.elPoly.setAttribute('stroke', occupied?'rgba(255,60,60,0.90)':'rgba(80,130,255,0.65)');
+  spot.elPoly.setAttribute('fill',occupied?'rgba(255,35,35,0.55)':'rgba(50,110,255,0.10)');
+  spot.elPoly.setAttribute('stroke',occupied?'rgba(255,55,55,0.95)':'rgba(70,120,255,0.55)');
+  updateCounter();
 }
 
-function findFreeSpot(blockIdx){
-  const candidates = SPOT_BLOCKS[blockIdx]?.filter(s=>!s.occupied)||[];
-  if(!candidates.length) return null;
-  return candidates[Math.floor(Math.random()*candidates.length)];
-}
-
+// ── Mapeamento minimap ──
 const SC=0.2;
 const A1=[
   {x:986,y:234},{x:959,y:241},{x:941,y:247},{x:919,y:252},
@@ -292,13 +588,13 @@ function camToMini(cx,cy){
 
 function buildPath(type,vi){
   if(type===-1) return[...ENTRY,...LOWER.slice(1)];
-  if(type===-2) return[...ENTRY2,...LOWER.slice(5)];         // 565→560→LOWER
-  if(type===-3) return[...ENTRY2,...BRANCH_MAIN.slice(1),...BRANCH_A.slice(1),...LOWER.slice(13)]; // 565→591→832→818→LOWER
-  if(type===-4) return[...ENTRY2,...BRANCH_MAIN.slice(1),...BRANCH_B.slice(1)];  // 565→591→857→851 (fim)
-  if(type===-5) return[...ENTRY2,...BRANCH_MAIN.slice(1),...BRANCH_C.slice(1)];  // 565→591→863→1349 (fim)
-  if(type===-6) return[...ENTRY_D,...ENTRY_DA.slice(1),...LOWER.slice(13)];       // 882→849→818→LOWER
-  if(type===-7) return[...ENTRY_D,...ENTRY_DB.slice(1)];                           // 882→956→1349 (fim)
-  if(type===-8) return[...UPPER_EXT,...ENTRY.slice(10),...LOWER.slice(1)];         // 987→395→ENTRY[10]→LOWER
+  if(type===-2) return[...ENTRY2,...LOWER.slice(5)];
+  if(type===-3) return[...ENTRY2,...BRANCH_MAIN.slice(1),...BRANCH_A.slice(1),...LOWER.slice(13)];
+  if(type===-4) return[...ENTRY2,...BRANCH_MAIN.slice(1),...BRANCH_B.slice(1)];
+  if(type===-5) return[...ENTRY2,...BRANCH_MAIN.slice(1),...BRANCH_C.slice(1)];
+  if(type===-6) return[...ENTRY_D,...ENTRY_DA.slice(1),...LOWER.slice(13)];
+  if(type===-7) return[...ENTRY_D,...ENTRY_DB.slice(1)];
+  if(type===-8) return[...UPPER_EXT,...ENTRY.slice(10),...LOWER.slice(1)];
   if(type===0)  return[...UPPER.slice(0,L_ENTRY_UPPER[vi]+1),...VIAS_L[vi].slice(1)];
   return[...LOWER.slice(0,U_ENTRY_LOWER[vi]+1),...VIAS_U[vi].slice(1),...UPPER.slice(U_EXIT_UPPER[vi]+1)];
 }
@@ -308,12 +604,16 @@ const COLORS=[
   {body:'#bb2020',roof:'#7a1010',stroke:'#ff5555',ws:'rgba(255,200,180,0.45)',dot:'#ff5555'},
   {body:'#cccccc',roof:'#888888',stroke:'#ffffff',ws:'rgba(200,230,255,0.55)',dot:'#ffffff'},
   {body:'#1a1a1a',roof:'#111111',stroke:'#555555',ws:'rgba(160,200,240,0.45)',dot:'#aaaaaa'},
+  {body:'#226622',roof:'#144014',stroke:'#44cc44',ws:'rgba(160,240,180,0.45)',dot:'#44cc44'},
+  {body:'#882288',roof:'#551155',stroke:'#cc44cc',ws:'rgba(230,180,240,0.45)',dot:'#cc44cc'},
+  {body:'#cc7700',roof:'#884400',stroke:'#ffaa00',ws:'rgba(255,230,160,0.45)',dot:'#ffaa00'},
+  {body:'#226688',roof:'#124466',stroke:'#44aacc',ws:'rgba(160,220,240,0.45)',dot:'#44aacc'},
 ];
 let BASE_SPEED=2.0;
 
 class Car{
   constructor(ci,delay){
-    this.color=COLORS[ci%4]; this.delay=delay; this.timer=0; this.active=false;
+    this.color=COLORS[ci%COLORS.length]; this.delay=delay; this.timer=0; this.active=false;
     this.path=[]; this.segIdx=0; this.segDist=0;
     this.pathType=-1; this.pathVia=-1;
     this.parkedSpot=null; this.parkFrames=0;
@@ -338,7 +638,8 @@ class Car{
     document.getElementById('g-cars').appendChild(g); this.el=g;
 
     const d=document.createElementNS(NS,'g'); d.style.display='none';
-    const mkC=(r,f)=>{const c=document.createElementNS(NS,'circle');c.setAttribute('r',r);c.setAttribute('fill',f);return c;}; d.appendChild(mkC('3.5','rgba(0,0,0,0.5)')); d.appendChild(mkC('2.8',this.color.dot));
+    const mkC=(r,f)=>{const c=document.createElementNS(NS,'circle');c.setAttribute('r',r);c.setAttribute('fill',f);return c;};
+    d.appendChild(mkC('3.5','rgba(0,0,0,0.5)')); d.appendChild(mkC('2.8',this.color.dot));
     document.getElementById('g-minimap-dots').appendChild(d); this.dot=d;
   }
 
@@ -346,35 +647,52 @@ class Car{
     if(this.parkedSpot){setSpotState(this.parkedSpot,false);this.parkedSpot=null;}
     this.parkFrames=0;
     const r=Math.random(), vi=Math.floor(Math.random()*9);
-    if(r<0.10){this.pathType=-1;this.pathVia=-1;}       // 10% entrada lateral
-    else if(r<0.13){this.pathType=-2;this.pathVia=-1;}  //  3% entrada baixo→560
-    else if(r<0.16){this.pathType=-3;this.pathVia=-1;}  //  3% entrada baixo→818
-    else if(r<0.18){this.pathType=-4;this.pathVia=-1;}  //  2% entrada baixo→851
-    else if(r<0.20){this.pathType=-5;this.pathVia=-1;}  //  2% entrada baixo→1349
-    else if(r<0.22){this.pathType=-6;this.pathVia=-1;}  //  2% entrada D→818
-    else if(r<0.24){this.pathType=-7;this.pathVia=-1;}  //  2% entrada D→1349
-    else if(r<0.27){this.pathType=-8;this.pathVia=-1;}  //  3% rota superior estendida
-    else if(r<0.60){this.pathType=0;this.pathVia=vi;}   // 33% via L
-    else{this.pathType=1;this.pathVia=vi;}               // 40% via U
+    if     (r<0.10){this.pathType=-1;this.pathVia=-1;}
+    else if(r<0.13){this.pathType=-2;this.pathVia=-1;}
+    else if(r<0.16){this.pathType=-3;this.pathVia=-1;}
+    else if(r<0.18){this.pathType=-4;this.pathVia=-1;}
+    else if(r<0.20){this.pathType=-5;this.pathVia=-1;}
+    else if(r<0.22){this.pathType=-6;this.pathVia=-1;}
+    else if(r<0.24){this.pathType=-7;this.pathVia=-1;}
+    else if(r<0.27){this.pathType=-8;this.pathVia=-1;}
+    else if(r<0.60){this.pathType=0;this.pathVia=vi;}
+    else            {this.pathType=1;this.pathVia=vi;}
     this.path=buildPath(this.pathType,this.pathVia);
     this.segIdx=0; this.segDist=0;
-    if(this.pathType!==-1 && Math.random()<0.45) this._injectPark();
+    if(Math.random()<0.60) this._injectPark();
   }
 
   _injectPark(){
-    const vi=this.pathVia;
-    const bi=Math.max(0,Math.min(7,vi-1+(Math.random()<0.5?0:1)));
-    const spot=findFreeSpot(bi);
-    if(!spot) return;
-    let bestI=1,bestD=Infinity;
-    for(let i=1;i<this.path.length-1;i++){
-      const d=ptDist(this.path[i],spot);
-      if(d<bestD){bestD=d;bestI=i;}
+    if(this.parkedSpot) return;
+    // Procura qualquer vaga livre perto do percurso atual
+    const freeSpots=SPOTS.filter(s=>!s.occupied);
+    if(!freeSpots.length) return;
+
+    let bestSpot=null, bestI=1, bestD=Infinity;
+    for(const spot of freeSpots){
+      for(let i=1;i<this.path.length-1;i++){
+        const d=ptDist(this.path[i],spot);
+        if(d<bestD){bestD=d;bestI=i;bestSpot=spot;}
+      }
     }
-    if(bestD>90) return;
-    setSpotState(spot,true); this.parkedSpot=spot;
-    const wp={x:spot.x,y:spot.y,isPark:true,waitFrames:280+Math.floor(Math.random()*280)};
-    this.path=[...this.path.slice(0,bestI+1),wp,...this.path.slice(bestI+1)];
+
+    if(bestD>90||!bestSpot) return;
+    setSpotState(bestSpot,true); this.parkedSpot=bestSpot;
+
+    const from=this.path[bestI];
+
+    // Pontos intermediários para trajetória suave de aproximação
+    const ctrl1={
+      x: from.x*0.55 + bestSpot.x*0.45,
+      y: from.y*0.55 + bestSpot.y*0.45
+    };
+    const ctrl2={
+      x: from.x*0.20 + bestSpot.x*0.80,
+      y: from.y*0.20 + bestSpot.y*0.80
+    };
+
+    const wp={x:bestSpot.x,y:bestSpot.y,isPark:true,waitFrames:260+Math.floor(Math.random()*300),parkAngle:bestSpot.slotAngle};
+    this.path=[...this.path.slice(0,bestI+1), ctrl1, ctrl2, wp, ...this.path.slice(bestI+1)];
   }
 
   update(){
@@ -401,7 +719,17 @@ class Car{
       else{
         rem-=toEnd;this.segIdx++;this.segDist=0;
         const cur=this.path[this.segIdx];
-        if(cur?.isPark){this.parkFrames=cur.waitFrames;rem=0;}
+        if(cur?.isPark){
+          this.parkFrames=cur.waitFrames;
+          // Posiciona exatamente no centro da vaga
+          this.x=cur.x; this.y=cur.y;
+          // Escolhe o sentido (0° ou 180°) do ângulo da vaga mais próximo da direção atual
+          let pa=cur.parkAngle||0;
+          const diff=((pa-this.angle+540)%360)-180;
+          if(Math.abs(diff)>90) pa+=180;
+          this.angle=pa;
+          rem=0;
+        }
       }
     }
     if(this.parkFrames===0&&this.segIdx<this.path.length-1){
@@ -422,8 +750,13 @@ class Car{
   }
 }
 
-const CARS=[new Car(0,0),new Car(1,200),new Car(2,420),new Car(3,640)];
+// 8 carros com delays escalonados
+const CARS=[
+  new Car(0,  0), new Car(1,180), new Car(2,360), new Car(3,540),
+  new Car(4,720), new Car(5,920), new Car(6,1120), new Car(7,1340),
+];
 
+// ── Debug paths ──
 (function(){
   const g=document.getElementById('g-debug');
   const mk=(tag,a)=>{const e=document.createElementNS(NS,tag);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,String(v)));return e;};
@@ -434,21 +767,20 @@ const CARS=[new Car(0,0),new Car(1,200),new Car(2,420),new Car(3,640)];
   mkP(UPPER,'rgba(0,220,255,0.7)');
   mkP(LOWER,'rgba(255,220,0,0.7)');
   mkP(ENTRY,'rgba(255,255,255,0.6)','6 4');
-  mkP(ENTRY2,  'rgba(255,200,80,0.7)','6 4');
+  mkP(ENTRY2,'rgba(255,200,80,0.7)','6 4');
   mkP(BRANCH_MAIN,'rgba(255,140,0,0.8)','5 3');
   mkP([BRANCH_MAIN[BRANCH_MAIN.length-1],...BRANCH_A.slice(1)],'rgba(80,255,200,0.8)','5 3');
   mkP([BRANCH_MAIN[BRANCH_MAIN.length-1],...BRANCH_B.slice(1)],'rgba(255,80,200,0.8)','5 3');
   mkP([BRANCH_MAIN[BRANCH_MAIN.length-1],...BRANCH_C.slice(1)],'rgba(255,255,80,0.8)','5 3');
   mkP(UPPER_EXT,'rgba(255,100,255,0.8)','5 3');
-  mkP(ENTRY_D,  'rgba(180,255,120,0.8)','5 3');
+  mkP(ENTRY_D,'rgba(180,255,120,0.8)','5 3');
   mkP([ENTRY_D[ENTRY_D.length-1],...ENTRY_DA.slice(1)],'rgba(80,220,255,0.8)','5 3');
   mkP([ENTRY_D[ENTRY_D.length-1],...ENTRY_DB.slice(1)],'rgba(255,180,80,0.8)','5 3');
   VIAS_L.forEach(v=>mkP(v,'rgba(80,255,80,0.8)','5 4'));
   VIAS_U.forEach(v=>mkP(v,'rgba(255,160,0,0.8)','5 4'));
-
   SPOTS.forEach(s=>g.appendChild(mk('circle',{cx:s.x,cy:s.y,r:1.5,fill:'rgba(255,230,0,0.8)'})));
   BLOCKS.forEach((b,bi)=>{
-    const {outer,divider}=b;
+    const{outer,divider}=b;
     [outer.tl,outer.tr,outer.br,outer.bl].forEach(p=>g.appendChild(mk('circle',{cx:p[0],cy:p[1],r:4,fill:'rgba(255,0,200,0.9)'})));
     [divider.top,divider.bot].forEach(p=>g.appendChild(mk('circle',{cx:p[0],cy:p[1],r:4,fill:'rgba(0,220,255,0.9)'})));
     const lbl=mk('text',{x:outer.tl[0]+4,y:outer.tl[1]-6,fill:'rgba(255,255,255,0.8)','font-size':9,'font-family':'Courier New'});
@@ -457,30 +789,71 @@ const CARS=[new Car(0,0),new Car(1,200),new Car(2,420),new Car(3,640)];
 })();
 
 initSpots();
-function loop(){requestAnimationFrame(loop);CARS.forEach(c=>c.update());}
+
+// ── Loop principal ──
+let running=false;
+
+function loop(){
+  requestAnimationFrame(loop);
+  if(running) CARS.forEach(c=>c.update());
+}
 loop();
 
 // ── Controles ──
-function tog(elId,btnId,label,onTxt,offTxt,extra){
-  const on=!(tog._s=tog._s||{})[elId];tog._s[elId]=on;
-  const el=document.getElementById(elId),btn=document.getElementById(btnId);
-  if(extra) extra(on,el); else el.style.display=on?'':'none';
-  btn.textContent=on?onTxt:offTxt; btn.classList.toggle('on',on);
+function startSim(){
+  if(running) return;
+  running=true;
+  document.getElementById('pause-overlay').classList.add('gone');
+  const btn=document.getElementById('btn-start');
+  btn.textContent='⏸ PAUSAR';
+  btn.classList.add('on');
 }
+
+function toggleStart(){
+  if(!running){
+    startSim();
+  } else {
+    running=false;
+    document.getElementById('pause-overlay').classList.remove('gone');
+    const btn=document.getElementById('btn-start');
+    btn.textContent='▶ INICIAR';
+    btn.classList.remove('on');
+  }
+}
+
 let debugOn=false;
 function toggleDebug(){
   debugOn=!debugOn;
   document.getElementById('g-debug').setAttribute('display',debugOn?'':'none');
-  document.getElementById('btn-debug').textContent=`▣ ROTAS: ${debugOn?'ON':'OFF'}`;
-  document.getElementById('btn-debug').classList.toggle('on',debugOn);
+  const btn=document.getElementById('btn-debug');
+  btn.textContent=`▣ ROTAS: ${debugOn?'ON':'OFF'}`;
+  btn.classList.toggle('on',debugOn);
 }
+
 let si=0;
 const SPEEDS=[2.0,4.0,0.8],SLBLS=['⏩ NORMAL','⏩⏩ RÁPIDO','🐢 LENTO'];
-function toggleSpeed(){si=(si+1)%3;BASE_SPEED=SPEEDS[si];document.getElementById('btn-speed').textContent=SLBLS[si];}
+function toggleSpeed(){
+  si=(si+1)%3; BASE_SPEED=SPEEDS[si];
+  document.getElementById('btn-speed').textContent=SLBLS[si];
+}
+
 let mmOn=true;
-function toggleMinimap(){mmOn=!mmOn;document.getElementById('minimap-wrap').style.display=mmOn?'':'none';document.getElementById('btn-minimap').textContent=`🗺 MAPA: ${mmOn?'ON':'OFF'}`;document.getElementById('btn-minimap').classList.toggle('on',mmOn);}
+function toggleMinimap(){
+  mmOn=!mmOn;
+  document.getElementById('minimap-wrap').style.display=mmOn?'':'none';
+  const btn=document.getElementById('btn-minimap');
+  btn.textContent=`🗺 MAPA: ${mmOn?'ON':'OFF'}`;
+  btn.classList.toggle('on',mmOn);
+}
+
 let spOn=true;
-function toggleSpots(){spOn=!spOn;document.getElementById('g-spots').style.display=spOn?'':'none';document.getElementById('btn-spots').textContent=`🅿 VAGAS: ${spOn?'ON':'OFF'}`;document.getElementById('btn-spots').classList.toggle('on',spOn);}
+function toggleSpots(){
+  spOn=!spOn;
+  document.getElementById('g-spots').style.display=spOn?'':'none';
+  const btn=document.getElementById('btn-spots');
+  btn.textContent=`🅿 VAGAS: ${spOn?'ON':'OFF'}`;
+  btn.classList.toggle('on',spOn);
+}
 </script>
 </body>
 </html>
